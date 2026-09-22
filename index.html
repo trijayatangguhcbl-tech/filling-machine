@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+
+<style>
+
+body{
+margin:0;
+padding:15px;
+font-family:Arial,sans-serif;
+background:#eef2f7;
+}
+
+h2{
+margin-top:0;
+color:#0f172a;
+text-align:center;
+}
+ 
+.card{
+background:#ffffff;
+padding:18px;
+border-radius:16px;
+margin-bottom:15px;
+box-shadow:0 4px 12px rgba(0,0,0,.08);
+}
+
+*{
+    box-sizing:border-box;
+}
+
+input,
+select,
+textarea{
+    width:100%;
+    padding:10px;
+    border:1px solid #ddd;
+    border-radius:8px;
+    margin-top:5px;
+}
+
+.item{
+    background:#fff;
+    padding:12px;
+    border-radius:10px;
+    margin-bottom:10px;
+    border-left:4px solid #2196f3;
+}
+
+button{
+width:100%;
+padding:15px;
+border:none;
+border-radius:12px;
+background:linear-gradient(
+135deg,
+#2563eb,
+#1d4ed8
+);
+color:white;
+font-size:16px;
+font-weight:bold;
+cursor:pointer;
+}
+
+.desc{
+    font-size:14px;
+    margin-top:5px;
+}
+
+#checklistContainer{
+    margin-top:10px;
+}
+
+.item{
+background:#f8fafc;
+border-left:5px solid #2563eb;
+padding:12px;
+border-radius:10px;
+margin-bottom:12px;
+}
+
+#comment{
+    min-height:120px;
+    resize:vertical;
+}
+
+.card label{
+    font-weight:bold;
+    display:block;
+    margin-bottom:8px;
+}
+
+label{
+color:#334155;
+}
+
+button:disabled{
+    background:#94a3b8;
+    cursor:not-allowed;
+}
+
+</style>
+</head>
+<body>
+
+<div class="card">
+
+  <h2>🔧 Checklist Maintenance</h2>
+
+  <label>Tanggal</label>
+  <input type="date" id="tanggal">
+
+  <label>Frequency</label>
+  <select id="frequency" onchange="loadMachines()">
+  <option value="Daily" selected>Pilih Frequency</option>
+  <option value="Daily">Daily</option>
+  <option value="Weekly">Weekly</option>
+  <option value="Monthly">Monthly</option>
+</select>
+  </select>
+
+  <label>Mesin</label>
+  <select id="machine" onchange="loadChecklist()">
+    <option value="">Pilih Mesin</option>
+  </select>
+
+  <label>Start</label>
+  <input type="time" id="start">
+
+  <label>Finish</label>
+  <input type="time" id="finish">
+
+  <hr>
+
+  <div id="checklistContainer"></div>
+
+  <label>Comment Maintenance</label>
+
+  <textarea
+    id="comment"
+    rows="4"
+    placeholder="Komentar umum hasil maintenance">
+  </textarea>
+
+  <br><br>
+
+  <button onclick="simpan()">
+    💾 Simpan
+  </button>
+
+</div>
+
+<script>
+
+window.currentItems = [];
+
+function getCsvUrl(){
+
+  const frequency =
+    document.getElementById("frequency").value;
+
+  if(frequency === "Daily"){
+    return "https://docs.google.com/spreadsheets/d/e/2PACX-1vRBADVqc_hsUjiDx3Yfj1MNE2AcdaUI-eThyhK8fe8XOIemdTeoOYDD1GYkn_QDk4HhQLKH7iiPz8W3/pub?gid=60974918&single=true&output=csv";
+  }
+
+  if(frequency === "Weekly"){
+    return "https://docs.google.com/spreadsheets/d/e/2PACX-1vRBADVqc_hsUjiDx3Yfj1MNE2AcdaUI-eThyhK8fe8XOIemdTeoOYDD1GYkn_QDk4HhQLKH7iiPz8W3/pub?gid=437024089&single=true&output=csv";
+  }
+
+  if(frequency === "Monthly"){
+    return "https://docs.google.com/spreadsheets/d/e/2PACX-1vRBADVqc_hsUjiDx3Yfj1MNE2AcdaUI-eThyhK8fe8XOIemdTeoOYDD1GYkn_QDk4HhQLKH7iiPz8W3/pub?gid=1877954496&single=true&output=csv";
+  }
+
+  return "";
+}
+
+async function loadMachines(){
+
+  const url = getCsvUrl();
+
+  if(!url) return;
+
+  const response = await fetch(url);
+  const csv = await response.text();
+
+  const rows = csv.trim().split("\n");
+
+  const headers = rows[0]
+    .split(",")
+    .map(h => h.replace(/"/g,"").trim());
+
+  const machine =
+    document.getElementById("machine");
+
+  machine.innerHTML =
+    '<option value="">Pilih Mesin</option>';
+
+  for(let i=1;i<headers.length;i++){
+
+    machine.innerHTML +=
+      `<option value="${headers[i]}">
+        ${headers[i]}
+      </option>`;
+
+  }
+
+}
+
+window.onload = function(){
+
+  document.getElementById(
+    "machine"
+  ).innerHTML =
+    '<option value="">Pilih Frequency terlebih dahulu</option>';
+
+	console.log(
+  document.getElementById("frequency").value
+);
+	
+	loadMachines();
+
+}
+
+async function loadChecklist() {
+
+  const machine =
+    document.getElementById("machine").value;
+
+  const url = getCsvUrl();
+  
+  const response = await fetch(url);
+  const csv = await response.text();
+
+  const rows = csv.trim().split("\n");
+
+  const headers = rows[0]
+    .split(",")
+    .map(h => h.replace(/"/g,"").trim());
+
+  const colIndex = headers.indexOf(machine);
+
+  if(colIndex === -1){
+    document.getElementById("checklistContainer")
+      .innerHTML = "<p>Mesin tidak ditemukan</p>";
+    return;
+  }
+
+  const items = [];
+
+  for(let i=1;i<rows.length;i++){
+
+    const cols = rows[i]
+      .split(",")
+      .map(c => c.replace(/"/g,"").trim());
+
+    if(cols[colIndex]){
+
+      items.push({
+        no: cols[0],
+        desc: cols[colIndex]
+      });
+
+    }
+
+  }
+
+  renderChecklist(items);
+
+}
+
+function renderChecklist(items){
+
+  let html = "";
+
+  items.forEach((item,index)=>{
+
+    html += `
+
+    <div class="item">
+
+      <b>${item.no}</b>
+
+      <div class="desc">
+        ${item.desc}
+      </div>
+
+      <select id="act_${index}">
+        <option value="">Pilih Action</option>
+        <option value="A">A - OK</option>
+        <option value="B">B - Adjusted</option>
+        <option value="C">C - Replaced</option>
+        <option value="D">D - Cleaning</option>
+      </select>
+
+      <textarea
+        id="note_${index}"
+        placeholder="Catatan"></textarea>
+
+    </div>
+
+    `;
+
+  });
+
+  document.getElementById(
+    "checklistContainer"
+  ).innerHTML = html;
+
+  window.currentItems = items;
+  console.log(items);
+}
+
+function simpan(){
+
+  const tanggal = document.getElementById("tanggal").value;
+  const machine = document.getElementById("machine").value;
+  const frequency = document.getElementById("frequency").value;
+  const start = document.getElementById("start").value;
+  const finish = document.getElementById("finish").value;
+  const comment = document.getElementById("comment").value;
+
+  // Validasi Header
+  if(!tanggal || !machine || !frequency || !start || !finish){
+    alert("⚠️ Tolong lengkapi data terlebih dahulu");
+    return;
+  }
+
+  const items = [];
+
+  let belumLengkap = false;
+
+  window.currentItems.forEach((item,index)=>{
+
+    const action =
+      document.getElementById("act_"+index).value;
+
+    const note =
+      document.getElementById("note_"+index).value;
+
+    if(!action){
+      belumLengkap = true;
+    }
+
+    items.push({
+      no:item.no,
+      action:action,
+      note:note
+    });
+
+  });
+
+  if(belumLengkap){
+    alert("⚠️ Masih ada checklist yang belum di isi bossku");
+    return;
+  }
+
+  // Konfirmasi
+  const yakin = confirm(
+    "Apakah data sudah benar?\n\nKlik OK untuk simpan."
+  );
+
+  if(!yakin){
+    return;
+  }
+
+  const data = {
+    tanggal,
+    machine,
+    frequency,
+    start,
+    finish,
+    comment,
+    items
+  };
+
+  const btn = document.querySelector("button");
+
+  btn.disabled = true;
+  btn.innerHTML = "⏳ Menyimpan...";
+
+  const WEB_APP_URL =
+  "https://script.google.com/macros/s/AKfycbwL7ZK5jOvPI8YcvD-ajU9wCKEFmLxdSuVXZL3N_a1j9xJ5qaCmcy9h6pIEMcAeyT6k_w/exec";
+
+  fetch(WEB_APP_URL,{
+  method:"POST",
+  mode:"no-cors",
+  headers:{
+    "Content-Type":"text/plain"
+  },
+  body:JSON.stringify(data)
+})
+  .then(()=>{
+
+  alert("✅ Data berhasil disimpan");
+
+  setTimeout(()=>{
+    location.reload();
+  },1000);
+
+})
+  .catch(err=>{
+
+    alert("❌ Gagal : " + err);
+
+    btn.disabled = false;
+    btn.innerHTML = "💾 Simpan";
+
+  });
+
+}
+
+</script>
+
+</body>
+</html>
