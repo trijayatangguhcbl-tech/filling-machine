@@ -132,6 +132,19 @@ button:disabled{
 
   <label>Finish</label>
   <input type="time" id="finish">
+  
+  <label>PIC</label>
+	<select id="PIC">
+	  <option value="">Pilih PIC</option>
+	  <option value="Jumadi">Jumadi</option>
+	  <option value="Adi">Adi</option>
+  </select>
+
+  <label>Supervisor</label>
+	<select id="supervisor">
+	  <option value="">Pilih Supervisor</option>
+	  <option value="Amrul">Amrul</option>
+  </select>
 
   <hr>
 
@@ -327,6 +340,8 @@ function simpan(){
   const start = document.getElementById("start").value;
   const finish = document.getElementById("finish").value;
   const comment = document.getElementById("comment").value;
+  const PIC = document.getElementById("PIC").value;
+  const supervisor = document.getElementById("supervisor").value;
 
   // Validasi Header
   if(!tanggal || !machine || !frequency || !start || !finish){
@@ -379,6 +394,8 @@ function simpan(){
     start,
     finish,
     comment,
+	PIC,
+	supervisor,
     items
   };
 
