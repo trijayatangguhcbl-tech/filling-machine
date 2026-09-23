@@ -255,7 +255,13 @@ async function loadChecklist() {
     const cols = rows[i]
       .split(",")
       .map(c => c.replace(/"/g,"").trim());
-
+		console.log(
+		  "Baris:",
+		  i,
+		  "Kolom:",
+		  cols.length,
+		  cols
+		);
     if(cols[colIndex]){
 
       items.push({
